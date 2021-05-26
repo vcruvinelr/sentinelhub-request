@@ -1,0 +1,6 @@
+.ol-map {
+    position: absolute;
+    min-height: 100%;
+    height: 600px;
+    width: 100%;
+}
