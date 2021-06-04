@@ -3,31 +3,42 @@ import "./Map.css";
 import MapContext from "../../Hooks/Map/";
 import Map from 'ol/Map'
 import View from 'ol/View'
-import { Tile as TileLayer} from 'ol/layer'
+import { Group as LayerGroup, Tile as TileLayer } from 'ol/layer'
 import XYZ from 'ol/source/XYZ'
 import Draw from 'ol/interaction/Draw';
 import WKT from 'ol/format/WKT';
 import { Vector as VectorSource, TileWMS } from 'ol/source';
+import "ol-ext/dist/ol-ext.css";
+import Swipe from "ol-ext/control/Swipe";
+import OSM from 'ol/source/OSM';
 
 const WebMap = ({ children }) => {
+
 
   const mapRef = useRef();
   const [map, setMap] = useState(null);
   const [tileType, setTileType] = useState('NDVI');
   const [tilePreset, setTilePreset] = useState('NDVI');
-  const mapTilerKey = '';
+  const mapTilerKey = 'kXP64NxsbG5krLKKy1HS';
+  const maptiler = new LayerGroup({
+    layers: [
+      new TileLayer({
+        source: new XYZ({
+          url: `https://api.maptiler.com/tiles/satellite/{z}/{x}/{y}.jpg?key=${mapTilerKey}`,
+          maxZoom: 20,
+        }),
+      })
+    ]
+  })
+
+  var osm = new TileLayer({
+    source: new OSM()
+  });
 
   useEffect(() => {
     const initialMap = new Map({
       target: mapRef.current,
-      layers: [
-        new TileLayer({
-          source: new XYZ({
-            url: `https://api.maptiler.com/tiles/satellite/{z}/{x}/{y}.jpg?key=${mapTilerKey}`,
-            maxZoom: 20,
-          }),
-        })
-      ],
+      layers: [maptiler],
       view: new View({
         projection: 'EPSG:3857',
         center: [0, 0],
@@ -35,6 +46,12 @@ const WebMap = ({ children }) => {
       }),
       controls: []
     })
+
+    var ctrl = new Swipe();
+    initialMap.addControl(ctrl);
+    ctrl.addLayer(maptiler);
+    ctrl.addLayer(maptiler, true);
+
     const source = new VectorSource({ wrapX: false });
     const draw = new Draw({
       source: source,
@@ -60,10 +77,12 @@ const WebMap = ({ children }) => {
         })
 
       })
+      ctrl.addLayer(sentinelTile);
       initialMap.addLayer(sentinelTile)
     });
 
     setMap(initialMap);
+
   }, [tilePreset, tileType]);
 
   return (
