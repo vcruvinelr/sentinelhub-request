@@ -11,11 +11,13 @@ import { Vector as VectorSource, TileWMS } from 'ol/source';
 import "ol-ext/dist/ol-ext.css";
 import Swipe from "ol-ext/control/Swipe";
 import OSM from 'ol/source/OSM';
+import Control from 'ol/control/Control';
 
 const WebMap = ({ children }) => {
 
 
   const mapRef = useRef();
+  const controlRef = useRef();
   const [map, setMap] = useState(null);
   const [tileType, setTileType] = useState('NDVI');
   const [tilePreset, setTilePreset] = useState('NDVI');
@@ -77,6 +79,8 @@ const WebMap = ({ children }) => {
         })
 
       })
+      var myControl = new Control({element: controlRef});
+      initialMap.addControl(myControl)
       ctrl.addLayer(sentinelTile);
       initialMap.addLayer(sentinelTile)
     });
@@ -87,9 +91,8 @@ const WebMap = ({ children }) => {
 
   return (
     <MapContext.Provider value={{ map }}>
-      <div ref={mapRef} className="ol-map">
-        {children}
-      </div>
+      <div ref={mapRef} className="ol-map"></div>
+      <div ref={controlRef} className='buttonMap'><button>BOTÃO TESTE FMT</button></div>
     </MapContext.Provider>
   )
 }

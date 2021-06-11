@@ -4,3 +4,10 @@
     height: 600px;
     width: 100%;
 }
+
+.buttonMap {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+  }
+  
