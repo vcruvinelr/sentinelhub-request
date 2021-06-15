@@ -3,7 +3,7 @@ import "./Map.css";
 import MapContext from "../../Hooks/Map/";
 import Map from 'ol/Map'
 import View from 'ol/View'
-import { Group as LayerGroup, Tile as TileLayer } from 'ol/layer'
+import { Group as LayerGroup, Tile as TileLayer, Vector as VectorLayer } from 'ol/layer'
 import XYZ from 'ol/source/XYZ'
 import Draw from 'ol/interaction/Draw';
 import WKT from 'ol/format/WKT';
@@ -12,6 +12,8 @@ import "ol-ext/dist/ol-ext.css";
 import Swipe from "ol-ext/control/Swipe";
 import OSM from 'ol/source/OSM';
 import Control from 'ol/control/Control';
+import Select from 'ol/interaction/Select';
+import {altKeyOnly, click, pointerMove} from 'ol/events/condition';
 
 const WebMap = ({ children }) => {
 
@@ -37,10 +39,22 @@ const WebMap = ({ children }) => {
     source: new OSM()
   });
 
+  const source = new VectorSource({ wrapX: false });
+  const draw = new Draw({
+    source: source,
+    type: 'LineString',
+  });
+
+  const vector = new VectorLayer({
+    source: source,
+  });
+  
+  const select = new Select();
+
   useEffect(() => {
     const initialMap = new Map({
       target: mapRef.current,
-      layers: [maptiler],
+      layers: [maptiler, vector],
       view: new View({
         projection: 'EPSG:3857',
         center: [0, 0],
@@ -48,44 +62,49 @@ const WebMap = ({ children }) => {
       }),
       controls: []
     })
-
     var ctrl = new Swipe();
+    initialMap.addInteraction(select);
     initialMap.addControl(ctrl);
     ctrl.addLayer(maptiler);
     ctrl.addLayer(maptiler, true);
 
-    const source = new VectorSource({ wrapX: false });
-    const draw = new Draw({
-      source: source,
-      type: 'Polygon',
-    });
     initialMap.addInteraction(draw);
 
-    draw.on('drawend', (drawned) => {
+    select.on('select', (e) => {
+      console.log(e);
+    })
 
-      const wktPolygon = new WKT();
-      const wktTile = wktPolygon.writeGeometry(drawned.feature.getGeometry())
+    draw.on('drawend', (d)=> {
+      initialMap.removeInteraction(draw);
+    })
+    ctrl.addLayer(vector, true);
+    // draw.on('drawend', (drawned) => {
+    //   console.log(drawned)
 
-      const sentinelTile = new TileLayer({
-        preload: Infinity,
-        visible: true,
-        source: new TileWMS({
-          url: "https://services.sentinel-hub.com/ogc/wms/367f9e80-77fa-46b2-a288-f49a87268be2",
-          params: {
-            "urlProcessingApi": "https://services.sentinel-hub.com/ogc/wms/367f9e80-77fa-46b2-a288-f49a87268be2", 'crs': 'EPSG:3857', 'width': 512, 'height': 512, "preset": tilePreset, "layers": tileType, 'time': '2021-04-24/2021-05-24', 'geometry': wktTile, 'showlogo': false
-          },
-          serverType: 'geoserver',
-          ratio: 1
-        })
+      // const wktPolygon = new WKT();
+      // const wktTile = wktPolygon.writeGeometry(drawned.feature.getGeometry())
 
-      })
-      var myControl = new Control({element: controlRef});
-      initialMap.addControl(myControl)
-      ctrl.addLayer(sentinelTile);
-      initialMap.addLayer(sentinelTile)
-    });
+      // const sentinelTile = new TileLayer({
+      //   preload: Infinity,
+      //   visible: true,
+      //   source: new TileWMS({
+      //     url: "https://services.sentinel-hub.com/ogc/wms/367f9e80-77fa-46b2-a288-f49a87268be2",
+      //     params: {
+      //       "urlProcessingApi": "https://services.sentinel-hub.com/ogc/wms/367f9e80-77fa-46b2-a288-f49a87268be2", 'crs': 'EPSG:3857', 'width': 512, 'height': 512, "preset": tilePreset, "layers": tileType, 'time': '2021-04-24/2021-05-24', 'geometry': wktTile, 'showlogo': false
+      //     },
+      //     serverType: 'geoserver',
+      //     ratio: 1
+      //   })
+
+      // })
+      // var myControl = new Control({element: controlRef});
+      // initialMap.addControl(myControl)
+      // ctrl.addLayer(sentinelTile);
+      //initialMap.addLayer(drawned.feature.getGeometry())
+    //});
 
     setMap(initialMap);
+    
 
   }, [tilePreset, tileType]);
 
